@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "297306065952",
+    "project_id": "alldeal-8b97e",
+    "storage_bucket": "alldeal-8b97e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:297306065952:android:5bd8da57a489bb69410045",
+        "android_client_info": {
+          "package_name": "com.majorworld.alldeal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "297306065952-85qkssgbpr6hbtcdr8fojusfgega3k9i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDs2hKLIxoZ_KL2M_7_zvF10wh1ezj7Wdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "297306065952-85qkssgbpr6hbtcdr8fojusfgega3k9i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
