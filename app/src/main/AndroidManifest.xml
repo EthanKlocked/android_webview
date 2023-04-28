@@ -93,9 +93,11 @@
     <uses-permission android:name="android.permission.CAMERA2" />
     <uses-feature android:name="android.hardware.camera" android:required="true" />
     <!-- 5.0 버전 파일업로드 퍼미션 -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="18"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
     <!-- 외부 저장소 사용 -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- android 13  파일업로드 퍼미션 -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
 
     <application
         android:allowBackup="true"
@@ -118,6 +120,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <!--
         <activity
             android:name=".IntroActivity"
             android:exported="true" >
@@ -130,6 +133,16 @@
             android:name=".MainActivity"
             android:exported="true"
             android:padding="0dp" />
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:padding="0dp" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <service
             android:name=".MyFireBaseMessagingService"
             android:exported="false">

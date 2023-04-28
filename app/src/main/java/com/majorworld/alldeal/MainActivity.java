@@ -13,7 +13,6 @@ import android.annotation.TargetApi;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.content.DialogInterface;
-//import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -21,7 +20,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.webkit.JsResult;
@@ -44,9 +42,10 @@ import java.io.File;
 //import com.google.firebase.iid.InstanceIdResult;
 
 import java.net.URISyntaxException;
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
-    // ------------------------- SETTING -------------------------- //
+    // --------------------------- SETTING --------------------------- //
     private static final String TAG = "MainActivityLog";
     private WebView webView1;
     private ProgressBar pBar;
@@ -68,8 +67,8 @@ public class MainActivity extends AppCompatActivity {
         webView1 = (WebView) findViewById(R.id.wView);
         pBar = findViewById(R.id.pBar);
 
-        // 각종 권한 획득
-        checkVerify();
+        //초기 권한 필요할 시
+        //checkVerify();
 
         webSettings = webView1.getSettings();
         webSettings.setJavaScriptEnabled(true);         // 자바스크립트 사용
@@ -105,15 +104,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // ------------------------- CAMERA ACTIVATE & FILE UPLOAD -------------------------- //
-    //권한 획득 여부 확인
+    //권한 획득 여부 확인 함수 (초기 구동시 사용)
     @TargetApi(Build.VERSION_CODES.M)
     public void checkVerify() {
-        if (ContextCompat.checkSelfPermission(this,Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED ||
+        if (
+                ContextCompat.checkSelfPermission(this,Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(this,Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                        (
+                                ContextCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED &&
+                                ContextCompat.checkSelfPermission(this,Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED
+                        )
+        ) {
                 //Log.d("checkVerify() : ","if문 들어옴");
 
             //카메라 또는 저장공간 권한 획득 여부 확인
@@ -122,9 +126,14 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 //Log.d("checkVerify() : ","카메라 및 저장공간 권한 요청");
                 // 카메라 및 저장공간 권한 요청
-                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.INTERNET, Manifest.permission.CAMERA,
+                ActivityCompat.requestPermissions(this,new String[]{
+                        Manifest.permission.INTERNET,
+                        Manifest.permission.CAMERA,
                         Manifest.permission.ACCESS_NETWORK_STATE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_MEDIA_IMAGES
+                }, 1);
             }
         }
     }
@@ -137,32 +146,38 @@ public class MainActivity extends AppCompatActivity {
         //Log.d("onRequestPermissionsResult() : ","들어옴");
         if (requestCode == 1)
         {
+            if (filePathCallbackLollipop != null) {
+                filePathCallbackLollipop.onReceiveValue(null);
+                filePathCallbackLollipop = null;
+            }
+
+            HashMap<String, Boolean> grantResultsMap = new HashMap<>();
             if (grantResults.length > 0)
             {
-                for (int i=0; i<grantResults.length; ++i)
-                {
-                    if (grantResults[i] == PackageManager.PERMISSION_DENIED)
-                    {
-                        // 카메라, 저장소 중 하나라도 거부한다면 앱실행 불가 메세지 띄움
-                        new AlertDialog.Builder(this).setTitle("알림").setMessage("권한을 허용해주셔야 앱을 이용할 수 있습니다.")
-                                .setPositiveButton("종료", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                        finish();
-                                    }
-                                }).setNegativeButton("권한 설정", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                                .setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
-                                        getApplicationContext().startActivity(intent);
-                                    }
-                                }).setCancelable(false).show();
+                boolean chk = true;
+                for (int i = 0; i < permissions.length; i++) {
+                    String permission = permissions[i];
+                    int grantResult = grantResults[i];
 
-                        return;
+                    // Check if the permission is granted or not
+                    if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                        grantResultsMap.put(permission, true);
+                        Log.d(TAG, permission + " is granted");
+                    } else {
+                        grantResultsMap.put(permission, false);
+                        Log.d(TAG, permission + " is denied");
                     }
                 }
-                //Toast.makeText(this, "Succeed Read/Write external storage !", Toast.LENGTH_SHORT).show();
+                boolean cameraChk = grantResultsMap.get("android.permission.CAMERA");
+                boolean writeChk = grantResultsMap.get("android.permission.WRITE_EXTERNAL_STORAGE");
+                boolean readChk1 = grantResultsMap.get("android.permission.READ_EXTERNAL_STORAGE");
+                boolean readChk2 = grantResultsMap.get("android.permission.READ_MEDIA_IMAGES");
+
+                if(cameraChk && ((writeChk && readChk1) || readChk2)){
+                    //runCamera(false);
+                    Toast.makeText(getApplicationContext(),"카메라 및 저장소 사용이 허용되었습니다.",Toast.LENGTH_SHORT).show();
+                    return;
+                }
             }
         }
     }
@@ -220,10 +235,8 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             default:
-
                 break;
         }
-
         super.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -234,9 +247,19 @@ public class MainActivity extends AppCompatActivity {
         //intentCamera.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         //File path = getFilesDir();
+
+        /* 2023-04-25 주석처리
         File path = Environment.getExternalStorageDirectory();
         File file = new File(path, "sample.png"); // sample.png 는 카메라로 찍었을 때 저장될 파일명이므로 사용자 마음대로
         // File 객체의 URI 를 얻는다.
+        */
+        // 2023-04-25 수정코드
+        File path = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"androidExampleFolder");
+        if(!path.exists()){
+            path.mkdirs();
+        }
+        File file = new File(path+File.separator+"IMG_" + String.valueOf(System.currentTimeMillis())+".jpg");
+
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
         {
             String strpa = getApplicationContext().getPackageName();
@@ -328,8 +351,29 @@ public class MainActivity extends AppCompatActivity {
         public boolean onShowFileChooser(
                 WebView webView, ValueCallback<Uri[]> filePathCallback,
                 FileChooserParams fileChooserParams) {
-            //Log.d("TAG", "5.0+");
 
+            //Log.d("TAG", "5.0+");
+            if (
+                    ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                            (
+                                    (
+                                            ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                                            ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                                    ) && ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED
+                            )
+            ){
+                Toast.makeText(getApplicationContext(),"추가 권한 요청이 필요한 서비스입니다.",Toast.LENGTH_SHORT).show();
+
+                ActivityCompat.requestPermissions(MainActivity.this,new String[]{
+                        Manifest.permission.INTERNET,
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.ACCESS_NETWORK_STATE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_MEDIA_IMAGES
+                }, 1);
+                return false;
+            }
             // Callback 초기화 (중요!)
             if (filePathCallbackLollipop != null) {
                 filePathCallbackLollipop.onReceiveValue(null);
@@ -340,6 +384,7 @@ public class MainActivity extends AppCompatActivity {
             boolean isCapture = fileChooserParams.isCaptureEnabled();
 
             //Log.d("onShowFileChooser : " , String.valueOf(isCapture));
+
             runCamera(isCapture);
             return true;
         }
