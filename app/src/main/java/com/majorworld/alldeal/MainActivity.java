@@ -10,6 +10,7 @@ import androidx.core.content.FileProvider;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.content.DialogInterface;
@@ -303,6 +304,23 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------- CHROME CLIENT -------------------------- //
     private class WebChromeClientClass extends WebChromeClient {
+        // target blank a태그에 대한 처리코드 2023-05-08 (카카오톡 채널 연동을 위해 추가)
+        @Override
+        public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, android.os.Message resultMsg)
+        {
+            // 사용자가 웹뷰에서 클릭한 정보를 획득
+            WebView.HitTestResult result = view.getHitTestResult();
+
+            // url 획득
+            String data = result.getExtra();
+
+            // url을 open
+            Context context = view.getContext();
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(data));
+            context.startActivity(browserIntent);
+            return false;
+        }
+
         // 자바스크립트의 alert창
         @Override
         public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
