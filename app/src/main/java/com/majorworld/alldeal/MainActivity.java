@@ -23,6 +23,7 @@ import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.webkit.CookieManager;
 import android.webkit.JsResult;
 import android.webkit.ValueCallback;
 import android.view.View;
@@ -65,12 +66,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //UI
         webView1 = (WebView) findViewById(R.id.wView);
         pBar = findViewById(R.id.pBar);
 
         //초기 권한 필요할 시
         //checkVerify();
 
+        //세팅
         webSettings = webView1.getSettings();
         webSettings.setJavaScriptEnabled(true);         // 자바스크립트 사용
         webSettings.setSupportMultipleWindows(true);    // 새창 띄우기 허용
@@ -86,9 +89,18 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setSaveFormData(false);
         webSettings.setTextZoom(95);
         webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-        webView1.loadUrl(defaultUrl);
+
+        //웹뷰 쿠키허용
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            webView1.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+            CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.setAcceptCookie(true);
+            cookieManager.setAcceptThirdPartyCookies(webView1, true);
+        }
+
         webView1.setWebChromeClient(new WebChromeClientClass());  //웹뷰에 크롬 사용 허용. 이 부분이 없으면 크롬에서 alert가 뜨지 않음
         webView1.setWebViewClient(new WebViewClientClass());
+        webView1.loadUrl(defaultUrl);
     }
 
     // ------------------------- BACK PRESSED -------------------------- //
